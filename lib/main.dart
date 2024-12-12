@@ -1,189 +1,249 @@
 import 'package:flutter/material.dart';
+import 'package:math_expressions/math_expressions.dart';
 
-void main() => runApp(CalculatorApp());
+void main() {
+  runApp(const CalculatorApp());
+}
 
 class CalculatorApp extends StatelessWidget {
+  const CalculatorApp({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: Calculator(),
+      home: CalculatorScreen(),
     );
   }
 }
 
-class Calculator extends StatefulWidget {
+class CalculatorScreen extends StatefulWidget {
   @override
-  _CalculatorState createState() => _CalculatorState();
+  _CalculatorScreenState createState() => _CalculatorScreenState();
 }
 
-class _CalculatorState extends State<Calculator> {
-  String displayText = '0';
-  double firstNum = 0;
-  double secondNum = 0;
-  String operation = '';
-  bool isSecondNum = false;
+class _CalculatorScreenState extends State<CalculatorScreen> {
+  String display = '0';
 
-  void buttonPressed(String value) {
+  void onButtonPressed(String value) {
     setState(() {
       if (value == 'AC') {
-        displayText = '0';
-        firstNum = 0;
-        secondNum = 0;
-        operation = '';
-        isSecondNum = false;
-      } else if (['+', '-', '×', '÷'].contains(value)) {
-        firstNum = double.tryParse(displayText) ?? 0;
-        operation = value;
-        isSecondNum = true;
-        displayText = '';
+        display = '0';
       } else if (value == '=') {
-        secondNum = double.tryParse(displayText) ?? 0;
-        switch (operation) {
-          case '+':
-            displayText = (firstNum + secondNum).toString();
-            break;
-          case '-':
-            displayText = (firstNum - secondNum).toString();
-            break;
-          case '×':
-            displayText = (firstNum * secondNum).toString();
-            break;
-          case '÷':
-            displayText = (firstNum / secondNum).toString();
-            break;
+        try {
+          Parser parser = Parser();
+          Expression expression = parser.parse(display.replaceAll('x', '*').replaceAll('÷', '/'));
+          ContextModel contextModel = ContextModel();
+          double result = expression.evaluate(EvaluationType.REAL, contextModel);
+          display = result.toString();
+        } catch (e) {
+          display = 'Error';
         }
-        isSecondNum = false;
       } else {
-        if (displayText == '0' || isSecondNum) {
-          displayText = value;
+        if (display == '0' || display == 'Error') {
+          display = value;
         } else {
-          displayText += value;
+          display += value;
         }
       }
     });
-  }
-
-  Widget buildButton(String text, Color color, Color textColor, {int flex = 1}) {
-    return Expanded(
-      flex: flex,
-      child: Padding(
-        padding: const EdgeInsets.all(4.0),
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: color,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-          onPressed: () => buttonPressed(text),
-          child: Text(
-            text,
-            style: TextStyle(fontSize: 28, color: textColor),
-          ),
-        ),
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        title: Text('Calculator', style: TextStyle(color: Colors.white)),
-        centerTitle: true,
-      ),
       body: Column(
         children: [
-          // Display screen
           Expanded(
-            flex: 2,
+            flex: 1,
             child: Container(
-              alignment: Alignment.bottomRight,
-              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              color: Colors.black,
+              alignment: Alignment.centerRight,
+              padding: const EdgeInsets.all(20),
               child: Text(
-                displayText,
-                style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold),
+                display,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 48,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
-          // Buttons
           Expanded(
-            flex: 8,
+            flex: 1,
+            child: Row(
+              children: ['+', '-', 'x', '÷'].map((text) {
+                return Expanded(
+                  child: GestureDetector(
+                    onTap: () => onButtonPressed(text),
+                    child: Container(
+                      margin: const EdgeInsets.all(8),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        text,
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          Expanded(
+            flex: 4,
             child: Row(
               children: [
-                // Left buttons
                 Expanded(
                   flex: 3,
                   child: Column(
                     children: [
-                      Row(
-                        children: [
-                          buildButton('+', Colors.grey[300]!, Colors.black),
-                          buildButton('-', Colors.grey[300]!, Colors.black),
-                          buildButton('×', Colors.grey[300]!, Colors.black),
-                          buildButton('÷', Colors.grey[300]!, Colors.black),
-                        ],
+                      Expanded(
+                        child: Row(
+                          children: ['7', '8', '9'].map((text) {
+                            return Expanded(
+                              child: GestureDetector(
+                                onTap: () => onButtonPressed(text),
+                                child: Container(
+                                  margin: const EdgeInsets.all(8),
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[200],
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    text,
+                                    style: const TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
                       ),
-                      Row(
-                        children: [
-                          buildButton('7', Colors.white, Colors.black),
-                          buildButton('8', Colors.white, Colors.black),
-                          buildButton('9', Colors.white, Colors.black),
-                        ],
+                      Expanded(
+                        child: Row(
+                          children: ['4', '5', '6'].map((text) {
+                            return Expanded(
+                              child: GestureDetector(
+                                onTap: () => onButtonPressed(text),
+                                child: Container(
+                                  margin: const EdgeInsets.all(8),
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[200],
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    text,
+                                    style: const TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
                       ),
-                      Row(
-                        children: [
-                          buildButton('4', Colors.white, Colors.black),
-                          buildButton('5', Colors.white, Colors.black),
-                          buildButton('6', Colors.white, Colors.black),
-                        ],
+                      Expanded(
+                        child: Row(
+                          children: ['1', '2', '3'].map((text) {
+                            return Expanded(
+                              child: GestureDetector(
+                                onTap: () => onButtonPressed(text),
+                                child: Container(
+                                  margin: const EdgeInsets.all(8),
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[200],
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    text,
+                                    style: const TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
                       ),
-                      Row(
-                        children: [
-                          buildButton('1', Colors.white, Colors.black),
-                          buildButton('2', Colors.white, Colors.black),
-                          buildButton('3', Colors.white, Colors.black),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          buildButton('0', Colors.white, Colors.black, flex: 2),
-                          buildButton('.', Colors.white, Colors.black),
-                          buildButton('AC', Colors.red, Colors.white),
-                        ],
+                      Expanded(
+                        child: Row(
+                          children: ['0', '.', 'AC'].map((text) {
+                            return Expanded(
+                              child: GestureDetector(
+                                onTap: () => onButtonPressed(text),
+                                child: Container(
+                                  margin: const EdgeInsets.all(8),
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    color: text == 'AC' ? Colors.red : Colors.grey[200],
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    text,
+                                    style: TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                      color: text == 'AC' ? Colors.white : Colors.black,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
                       ),
                     ],
                   ),
                 ),
-                // "=" button spanning multiple rows
                 Expanded(
                   flex: 1,
                   child: Column(
                     children: [
-                      Spacer(flex: 1),
                       Expanded(
-                        flex: 8,
-                        child: Padding(
-                          padding: const EdgeInsets.all(4.0),
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
+                        flex: 0,
+                        child: SizedBox(),
+                      ),
+                      Expanded(
+                        flex: 4,
+                        child: GestureDetector(
+                          onTap: () => onButtonPressed('='),
+                          child: Container(
+                            margin: const EdgeInsets.all(8),
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: Colors.blue,
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                            onPressed: () => buttonPressed('='),
-                            child: Text(
+                            child: const Text(
                               '=',
-                              style: TextStyle(fontSize: 28, color: Colors.white),
+                              style: TextStyle(
+                                fontSize: 24,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ),
                       ),
-                      Spacer(flex: 1),
                     ],
                   ),
                 ),
